@@ -1,4 +1,5 @@
 import * as Sequelize from 'sequelize';
+import { genSaltSync, hashSync, compareSync } from 'bcryptjs';
 
 import { UserInstance } from './UserInstance';
 import { BaseMoldeInterface } from './../../interfaces/BaseMoldeInterface';
@@ -38,7 +39,19 @@ export default (sequelize: Sequelize.Sequelize, dataTypes: Sequelize.DataTypes):
             allowNull: true,
             defaultValue: null
         }
+    }, {
+        tableName: 'users',
+        hooks: {
+            beforeCreate: (userInstance: UserInstance, options: Sequelize.CreateOptions): void => {
+                const salt = genSaltSync();
+                userInstance.password = hashSync(userInstance.password, salt);
+            }
+        }
     });
+
+    user.prototype.isPassword = (encodedPassword: string, password): boolean => {
+        return compareSync(password, encodedPassword);
+    }
 
     return user;
 }
